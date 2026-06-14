@@ -9,7 +9,8 @@ export class CreateProductsTable1738350512345 implements MigrationInterface {
           name VARCHAR(255) NOT NULL,
           price NUMERIC(10,2) NOT NULL,
           qr_code TEXT NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at timestamp with time zone NOT NULL DEFAULT now(),
+        updated_at timestamp with time zone NOT NULL DEFAULT now(),
           FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
         );
       `);

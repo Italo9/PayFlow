@@ -1,56 +1,54 @@
 # PayFlow (payckout)
 
-API de pagamentos e checkout multi-tenant construída com NestJS, TypeORM e PostgreSQL. Cada conta de cliente é uma `company`, e usuários, produtos, carrinhos, checkouts e pagamentos pertencem a uma company.
+API de pagamentos e checkout multi-tenant em NestJS, TypeORM e PostgreSQL. Cada cliente é uma `company` que possui usuários, produtos, carrinhos, checkouts e pagamentos. A cobrança PIX é feita via gateway Payco, com confirmação por webhook.
 
 ## Stack
 
 - NestJS 11 (TypeScript)
 - TypeORM 0.3 + PostgreSQL (`pg`)
+- Redis (`ioredis`)
+- Autenticação via Stack Auth (arquitetura hexagonal: ports/adapters)
 - Validação com `class-validator` / `class-transformer`
 - Hash de senha com `bcrypt`
-- Geração de QR Code (`qrcode`) para o fluxo de cobrança
+- Geração de QR Code (`qrcode`)
+- Documentação via Swagger (`@nestjs/swagger`)
 
 ## Setup
 
 ```bash
 yarn install
-cp .env.example .env   # preencha as credenciais do banco
+cp .env.example .env   # preencha as credenciais
 yarn start:dev
 ```
 
-As migrations rodam automaticamente no boot (`migrationsRun: true`).
+Com a aplicação no ar, o Swagger fica em `/api/docs`.
+
+## Banco de dados
+
+```bash
+yarn migration:run   # roda as migrations
+yarn seed            # cria company e usuario admin iniciais
+```
 
 ## Variáveis de ambiente
 
-| Variável      | Descrição           | Padrão      |
-| ------------- | ------------------- | ----------- |
-| `PORT`        | Porta HTTP da API   | `3000`      |
-| `DB_HOST`     | Host do PostgreSQL  | `localhost` |
-| `DB_PORT`     | Porta do PostgreSQL | `5432`      |
-| `DB_USER`     | Usuário do banco    | `postgres`  |
-| `DB_PASSWORD` | Senha do banco      | —           |
-| `DB_NAME`     | Nome do banco       | `payckout`  |
+| Variável | Descrição |
+| -------- | -------- |
+| `DB_HOST` / `DB_PORT` / `DB_USERNAME` / `DB_PASSWORD` / `DB_DATABASE` | Conexão PostgreSQL |
+| `STACK_SECRET_SERVER_KEY` / `NEXT_PUBLIC_STACK_PROJECT_ID` | Credenciais do Stack Auth |
+| `PAYCO_CLIENT_ID` / `PAYCO_CLIENT_SECRET` / `PAYCO_AUTH_URL` | Credenciais do gateway Payco |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Envio de e-mail |
 
-## Modelo de dados
+## Módulos
 
-`companies` -> `users` / `products` / `carts` -> `cart_items` / `checkouts` / `payments` / `payment_webhooks` / `company_settings`
+`auth` (Stack Auth, JWT, sessões) · `user` · `company` · `company-setting` · `products` · `carts` · `carts_items` · `checkout` · `payment` · `webhook`
 
-As migrations ficam em `src/migrations/` e sao versionadas pela tabela `migrations`.
+## Fluxo de checkout
 
-## Status
+`carrinho -> itens -> checkout -> cobrança PIX (Payco) -> webhook de confirmação`
 
-| Modulo            | Situacao                                        |
-| ----------------- | ----------------------------------------------- |
-| `user`            | Implementado (CRUD + hash de senha + validacao) |
-| `company`         | A implementar                                   |
-| `company-setting` | A implementar                                   |
-| `checkout`        | A implementar                                   |
-| `payment`         | A implementar (integracao + webhooks)           |
+## Status e melhorias previstas
 
-## Roadmap
-
-- Implementar persistencia real nos modulos restantes seguindo o padrao de `user`
-- Autenticacao JWT e guard por company (multi-tenant)
-- Fluxo de checkout: carrinho -> cobranca -> QR Code
-- Recebimento de webhooks de pagamento com verificacao de assinatura
-- Testes de integracao dos fluxos criticos
+- Mover a chave de derivação de criptografia e segredos de gateway para variáveis de ambiente
+- Cobrir os fluxos de checkout e webhook com testes de integração
+- Trocar a senha do admin de seed por geração aleatória com obrigação de troca no primeiro login
