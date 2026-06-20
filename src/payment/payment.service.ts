@@ -1,26 +1,87 @@
-import { Injectable } from '@nestjs/common';
-import { CreatePaymentDto } from './dto/create-payment.dto';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Payment } from './entities/payment.entity';
 
 @Injectable()
 export class PaymentService {
-  create(createPaymentDto: CreatePaymentDto) {
-    return 'This action adds a new payment';
+  constructor(
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
+  ) {}
+
+  async processPayment(paymentDetails: any) {
+    const companyId = paymentDetails.companyId;
+    const status = paymentDetails.status;
+    const receivData = paymentDetails.receivData;
+    const payment = this.paymentRepository.create({
+      companyId,
+      status,
+      receivData,
+    });
+
+    const result = await this.paymentRepository.save(payment);
+    console.log('resultresultresult', result);
   }
 
-  findAll() {
-    return `This action returns all payment`;
+  async findPaymentBySessionIdAndItemCode(
+    sessionId: string,
+  ): Promise<Payment | null> {
+    console.log('Iniciando a busca pelo pagamento com sessionId:', sessionId);
+
+    const payments = await this.paymentRepository.find();
+    console.log('Pagamentos encontrados:', payments.length);
+
+    const payment = payments.find((payment) => {
+      let receivData;
+
+      try {
+        receivData =
+          typeof payment.receivData === 'string'
+            ? JSON.parse(payment.receivData)
+            : payment.receivData;
+
+        console.log(
+          'Verificando pagamento:',
+          payment.id,
+          'com receivData.id:',
+          receivData.id,
+        );
+
+        if (receivData.items[0].code !== sessionId) {
+          console.log('sessionId não corresponde ao pagamento');
+          return false;
+        }
+
+        console.log('sessionId corresponde ao pagamento');
+        return true;
+      } catch (error) {
+        console.error('Erro ao processar receivData:', error);
+        return false;
+      }
+    }) as Payment;
+
+    if (payment) {
+      console.log('Pagamento encontrado:', payment.id);
+    } else {
+      console.log('Pagamento não encontrado');
+    }
+
+    return payment;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} payment`;
-  }
+  async updatePaymentStatus(
+    sessionId: string,
+    newStatus: string,
+  ): Promise<Payment> {
+    const payment = await this.findPaymentBySessionIdAndItemCode(sessionId);
 
-  update(id: number, updatePaymentDto: UpdatePaymentDto) {
-    return `This action updates a #${id} payment`;
-  }
+    if (!payment) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} payment`;
+    payment.status = newStatus;
+
+    return await this.paymentRepository.save(payment);
   }
 }

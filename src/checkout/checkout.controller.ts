@@ -1,34 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+} from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
-import { CreateCheckoutDto } from './dto/create-checkout.dto';
-import { UpdateCheckoutDto } from './dto/update-checkout.dto';
+import { CreatePaymentDto } from './dto/create-checkout.dto';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
+@ApiTags('Checkout')
 @Controller('checkout')
 export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
 
   @Post()
-  create(@Body() createCheckoutDto: CreateCheckoutDto) {
-    return this.checkoutService.create(createCheckoutDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.checkoutService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.checkoutService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCheckoutDto: UpdateCheckoutDto) {
-    return this.checkoutService.update(+id, updateCheckoutDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.checkoutService.remove(+id);
+  async createCheckout(
+    @Body() createPaymentDto: any,
+  ): Promise<{ qr_code: string; payment_url: string }> {
+    console.log('cheguei na controller', createPaymentDto);
+    const paymentUrl = await this.checkoutService.createPayment(
+      createPaymentDto,
+      createPaymentDto.companyId as number,
+    );
+    return { qr_code: paymentUrl.qrCodePix, payment_url: paymentUrl.pixUrl };
   }
 }
