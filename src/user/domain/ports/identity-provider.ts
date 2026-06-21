@@ -1,17 +1,17 @@
 export const IDENTITY_PROVIDER = Symbol('IDENTITY_PROVIDER');
 
 export interface ExternalUserInput {
-  name: string;
-  lastName: string;
-  email: string;
+  display_name: string;
+  primary_email: string;
   password: string;
-  companyId: number;
-  loggedUserEmail?: string;
-  token?: string;
+  client_metadata?: Record<string, unknown>;
+  server_metadata?: Record<string, unknown>;
+  primary_email_verified?: boolean;
+  primary_email_auth_enabled?: boolean;
 }
 
 export interface IdentityProvider {
-  createUser(input: ExternalUserInput): Promise<{ id: string | null }>;
-  deleteUser(idOrEmail: string): Promise<void>;
-  getByToken(token: string): Promise<{ email: string } | null>;
+  createExternal(input: ExternalUserInput): Promise<{ id?: string }>;
+  getByAccessToken(accessToken: string): Promise<{ primary_email: string }>;
+  deleteExternal(idOrEmail: string): Promise<void>;
 }

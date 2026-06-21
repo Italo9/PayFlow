@@ -6,7 +6,7 @@ export class User {
     public email: string,
     public password: string,
     public role: string,
-    public readonly companyId: number | null,
+    public companyId: number | null,
     public readonly createdAt?: Date,
     public readonly updatedAt?: Date,
   ) {}
@@ -27,30 +27,37 @@ export class UserNotFound extends Error {
   }
 }
 
-export class UserUnauthorized extends Error {
+export class UserOperationNotAllowed extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'UserUnauthorized';
+    this.name = 'UserOperationNotAllowed';
   }
 }
 
-export class UserForbidden extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'UserForbidden';
+export class InvalidToken extends Error {
+  constructor() {
+    super('Token invalido');
+    this.name = 'InvalidToken';
   }
 }
 
-export class UserBadRequest extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'UserBadRequest';
+export class AuthenticatedUserNotFound extends Error {
+  constructor() {
+    super('Usuario logado nao encontrado');
+    this.name = 'AuthenticatedUserNotFound';
   }
 }
 
-export class UserCompanyNotFound extends Error {
+export class ExternalUserCreationFailed extends Error {
+  constructor() {
+    super('Falha ao criar usuario no servico externo');
+    this.name = 'ExternalUserCreationFailed';
+  }
+}
+
+export class CompanyNotFound extends Error {
   constructor() {
     super('Empresa nao encontrada');
-    this.name = 'UserCompanyNotFound';
+    this.name = 'CompanyNotFound';
   }
 }
