@@ -2,9 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../domain/user';
-import { NewUserData, UserPatch, UserRepository } from '../../domain/ports/user.repository';
+import {
+  UserRepository,
+  CreateUserData,
+  UpdateUserPatch,
+} from '../../domain/ports/user.repository';
 import { User as UserOrm } from '../../entities/user.entity';
-import { Company } from '../../../company/entities/company.entity';
 import { UserMapper } from './user.mapper';
 
 @Injectable()
@@ -14,14 +17,14 @@ export class TypeOrmUserRepository implements UserRepository {
     private readonly repo: Repository<UserOrm>,
   ) {}
 
-  async create(data: NewUserData): Promise<User> {
+  async create(data: CreateUserData): Promise<User> {
     const entity = this.repo.create({
       name: data.name,
       lastName: data.lastName,
       email: data.email,
-      password: data.password,
+      password: data.passwordHash,
       role: data.role,
-      company: { id: data.companyId } as Company,
+      company: { id: data.companyId },
     });
     const saved = await this.repo.save(entity);
     return UserMapper.toDomain(saved);
@@ -45,16 +48,8 @@ export class TypeOrmUserRepository implements UserRepository {
     return rows.map(UserMapper.toDomain);
   }
 
-  async update(id: number, patch: UserPatch): Promise<void> {
-    const entity = await this.repo.findOne({ where: { id } });
-    if (!entity) return;
-    if (patch.name !== undefined) entity.name = patch.name;
-    if (patch.lastName !== undefined) entity.lastName = patch.lastName;
-    if (patch.email !== undefined) entity.email = patch.email;
-    if (patch.password !== undefined) entity.password = patch.password;
-    if (patch.role !== undefined) entity.role = patch.role;
-    if (patch.companyId !== undefined) entity.company = { id: patch.companyId } as Company;
-    await this.repo.save(entity);
+  async update(id: number, patch: UpdateUserPatch): Promise<void> {
+    await this.repo.update(id, patch);
   }
 
   async delete(id: number): Promise<void> {

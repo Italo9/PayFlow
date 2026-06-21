@@ -4,7 +4,7 @@ import { User as UserOrm } from '../../entities/user.entity';
 export class UserMapper {
   static toDomain(row: UserOrm): User {
     return new User(
-      row.id,
+      Number(row.id),
       row.name,
       row.lastName,
       row.email,
