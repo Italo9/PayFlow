@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@ne
 import { AuthRequest } from '../../../auth/guards/auth.guard';
 import { CreateUserDto } from '../../dto/create-user.dto';
 import { UpdateUserDto } from '../../dto/update-user.dto';
+import { UserPresenter } from './user.presenter';
 import { CreateUserUseCase } from '../../application/create-user.usecase';
 import { ListUsersUseCase } from '../../application/list-users.usecase';
 import { GetUserUseCase } from '../../application/get-user.usecase';
@@ -34,44 +35,35 @@ export class UserController {
   @Post()
   @ApiOperation({ summary: 'Criar um novo usuario' })
   @ApiResponse({ status: 201, description: 'Usuario criado com sucesso' })
-  create(@Body() dto: CreateUserDto, @Req() request: AuthRequest) {
-    return this.createUser.execute(
-      {
-        name: dto.name,
-        lastName: dto.lastName,
-        email: dto.email,
-        password: dto.password,
-        companyId: dto.companyId,
-        role: dto.role,
-        loggedUserEmail: dto.loggedUserEmail,
-        token: dto.token,
-      },
-      request.headers.authorization as string,
-    );
+  async create(@Body() dto: CreateUserDto, @Req() request: AuthRequest) {
+    const user = await this.createUser.execute(dto, request.headers.authorization as string);
+    return UserPresenter.toHttp(user);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os usuarios' })
-  findAll(@Req() request: AuthRequest) {
-    return this.listUsers.execute(request.headers.authorization as string);
+  async findAll(@Req() request: AuthRequest) {
+    const users = await this.listUsers.execute(request.headers.authorization as string);
+    return users.map(UserPresenter.toHttp);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar um usuario pelo ID' })
   @ApiParam({ name: 'id', description: 'ID do usuario' })
-  findOne(@Param('id', ParseIntPipe) id: number, @Req() request: AuthRequest) {
-    return this.getUser.execute(id, request.headers.authorization as string);
+  async findOne(@Param('id', ParseIntPipe) id: number, @Req() request: AuthRequest) {
+    const user = await this.getUser.execute(id, request.headers.authorization as string);
+    return UserPresenter.toHttp(user);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um usuario pelo ID' })
   @ApiParam({ name: 'id', description: 'ID do usuario' })
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
     @Req() request: AuthRequest,
   ) {
-    return this.updateUser.execute(
+    const user = await this.updateUser.execute(
       id,
       {
         name: dto.name,
@@ -79,10 +71,10 @@ export class UserController {
         email: dto.email,
         password: dto.password,
         role: dto.role,
-        companyId: dto.companyId,
       },
       request.headers.authorization as string,
     );
+    return user ? UserPresenter.toHttp(user) : null;
   }
 
   @Delete(':id')
