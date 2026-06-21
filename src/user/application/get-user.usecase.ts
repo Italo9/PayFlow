@@ -1,23 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { User, UserForbidden, UserNotFound } from '../domain/user';
+import { User, UserNotFound, UserOperationNotAllowed } from '../domain/user';
 import { USER_REPOSITORY, UserRepository } from '../domain/ports/user.repository';
-import { GetRequesterUseCase } from './get-requester.usecase';
+import { GetAuthenticatedUserUseCase } from './get-authenticated-user.usecase';
 
 @Injectable()
 export class GetUserUseCase {
   constructor(
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
-    private readonly getRequester: GetRequesterUseCase,
+    private readonly getAuthenticatedUser: GetAuthenticatedUserUseCase,
   ) {}
 
   async execute(id: number, token: string): Promise<User> {
     const user = await this.users.findById(id);
     if (!user) throw new UserNotFound();
 
-    const requester = await this.getRequester.execute(token);
-    if (requester.isManager() && user.companyId !== requester.companyId) {
-      throw new UserForbidden('Voce nao tem permissao para acessar este usuario');
+    const acting = await this.getAuthenticatedUser.execute(token);
+    if (acting.isManager() && user.companyId !== acting.companyId) {
+      throw new UserOperationNotAllowed('Voce nao tem permissao para acessar este usuario');
     }
+
     return user;
   }
 }

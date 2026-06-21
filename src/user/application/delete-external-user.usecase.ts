@@ -5,7 +5,7 @@ import { IDENTITY_PROVIDER, IdentityProvider } from '../domain/ports/identity-pr
 export class DeleteExternalUserUseCase {
   constructor(@Inject(IDENTITY_PROVIDER) private readonly identity: IdentityProvider) {}
 
-  async execute(idOrEmail: string): Promise<void> {
-    await this.identity.deleteUser(idOrEmail);
+  async execute(email: string): Promise<void> {
+    await this.identity.deleteExternal(email);
   }
 }
