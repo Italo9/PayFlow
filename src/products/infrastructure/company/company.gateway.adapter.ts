@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { CompanyGateway, CompanyView } from '../../domain/ports/company-gateway';
-import { CompanyService } from '../../../company/company.service';
+import { GetCompanyUseCase } from '../../../company/application/get-company.usecase';
 
 @Injectable()
 export class CompanyGatewayAdapter implements CompanyGateway {
-  constructor(private readonly companyService: CompanyService) {}
+  constructor(private readonly getCompany: GetCompanyUseCase) {}
 
   async findById(companyId: number): Promise<CompanyView | null> {
-    const company = await this.companyService.findOne(String(companyId));
-    if (!company) return null;
-    return { id: company.id, carpayment: company.carpayment };
+    try {
+      const company = await this.getCompany.execute(companyId);
+      return { id: company.id as number, carpayment: company.carpayment };
+    } catch {
+      return null;
+    }
   }
 }
