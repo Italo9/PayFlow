@@ -5,21 +5,21 @@ import {
   CreateOwnerInput,
 } from '../../domain/ports/user-gateway';
 import { GetUserByEmailUseCase } from '../../../user/application/get-user-by-email.usecase';
-import { GetRequesterUseCase } from '../../../user/application/get-requester.usecase';
+import { GetAuthenticatedUserUseCase } from '../../../user/application/get-authenticated-user.usecase';
 import { CreateUserUseCase } from '../../../user/application/create-user.usecase';
 import { RemoveUserUseCase } from '../../../user/application/remove-user.usecase';
-import { RemoveUsersByCompanyUseCase } from '../../../user/application/remove-users-by-company.usecase';
 import { DeleteExternalUserUseCase } from '../../../user/application/delete-external-user.usecase';
+import { RemoveUsersByCompanyUseCase } from '../../../user/application/remove-users-by-company.usecase';
 
 @Injectable()
 export class UserGatewayAdapter implements UserGateway {
   constructor(
     private readonly getUserByEmail: GetUserByEmailUseCase,
-    private readonly getRequester: GetRequesterUseCase,
+    private readonly getAuthenticatedUser: GetAuthenticatedUserUseCase,
     private readonly createUser: CreateUserUseCase,
     private readonly removeUserUseCase: RemoveUserUseCase,
-    private readonly removeUsersByCompanyUseCase: RemoveUsersByCompanyUseCase,
     private readonly deleteExternalUser: DeleteExternalUserUseCase,
+    private readonly removeUsersByCompanyUseCase: RemoveUsersByCompanyUseCase,
   ) {}
 
   async findByEmail(email: string): Promise<{ role: string } | null> {
@@ -28,7 +28,7 @@ export class UserGatewayAdapter implements UserGateway {
   }
 
   async getByToken(token: string): Promise<GatewayUser | null> {
-    const user = await this.getRequester.execute(token);
+    const user = await this.getAuthenticatedUser.execute(token);
     return { role: user.role, companyId: user.companyId };
   }
 
