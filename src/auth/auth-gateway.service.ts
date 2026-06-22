@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
-import { CompanySettingService } from '../company-setting/company-setting.service';
+import { GetCompanySettingByCompanyUseCase } from '../company-setting/application/get-company-setting-by-company.usecase';
 
 interface Gateway {
   PAYCO_CLIENT_ID: string;
@@ -11,28 +11,26 @@ interface Gateway {
 export class AuthGatewayService {
   private readonly authUrl: string;
 
-  constructor(private companySettingService: CompanySettingService) {
+  constructor(private readonly getSetting: GetCompanySettingByCompanyUseCase) {
     this.authUrl = process.env.PAYCO_AUTH_URL as string;
   }
 
-  async getAccessToken(comapnyID): Promise<string> {
+  async getAccessToken(companyId): Promise<string> {
     try {
-      const companySettings = await this.companySettingService.findOneCompanyId(
-        Number(comapnyID),
-      );
+      const setting = await this.getSetting.execute(Number(companyId));
 
-      if (!companySettings || !companySettings.gateway) {
+      if (!setting || !setting.gateway) {
         throw new HttpException(
-          'Configurações da empresa não encontradas',
+          'Configuracoes da empresa nao encontradas',
           HttpStatus.NOT_FOUND,
         );
       }
-  
-      const gateway = companySettings.gateway as Gateway;
+
+      const gateway = setting.gateway as Gateway;
 
       if (!gateway.PAYCO_CLIENT_ID || !gateway.PAYCO_CLIENT_SECRET) {
         throw new HttpException(
-          'Credenciais do gateway não configuradas',
+          'Credenciais do gateway nao configuradas',
           HttpStatus.BAD_REQUEST,
         );
       }
