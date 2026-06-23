@@ -1,26 +1,45 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartItem } from './entities/cart-items.entity';
-import { CartItemsService } from './cart-items.service';
-import { CartItemsController } from './cart-items.controller';
-import { ProductService } from '../products/product.service';
-import { CompanyModule } from '../company/company.module';
 import { CartModule } from '../carts/cart.module';
-import { CheckoutModule } from '../checkout/checkout.module';
-import { PaymentModule } from '../payment/payment.module';
+import { ProductModule } from '../products/product.module';
 import { CompanySettingModule } from '../company-setting/company-setting.module';
+import { CartItemsController } from './infrastructure/http/cart-items.controller';
+import { RedisCartStore } from './infrastructure/store/redis-cart.store';
+import { ProductGatewayAdapter } from './infrastructure/product/product.gateway.adapter';
+import { SettingsGatewayAdapter } from './infrastructure/settings/settings.gateway.adapter';
+import { TypeOrmCartItemRepository } from './infrastructure/persistence/typeorm-cart-item.repository';
+import { CART_STORE } from './domain/ports/cart-store';
+import { PRODUCT_GATEWAY } from './domain/ports/product-gateway';
+import { SETTINGS_GATEWAY } from './domain/ports/settings-gateway';
+import { CART_ITEM_REPOSITORY } from './domain/ports/cart-item.repository';
+import { GetCartUseCase } from './application/get-cart.usecase';
+import { GetCartItemsUseCase } from './application/get-cart-items.usecase';
+import { AddToCartUseCase } from './application/add-to-cart.usecase';
+import { RemoveFromCartUseCase } from './application/remove-from-cart.usecase';
+import { ClearCartUseCase } from './application/clear-cart.usecase';
+import { PrepaymentUseCase } from './application/prepayment.usecase';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CartItem]),
-    forwardRef(() => CompanyModule),
     forwardRef(() => CartModule),
-    forwardRef(() => CheckoutModule),
-    forwardRef(() => PaymentModule),
+    forwardRef(() => ProductModule),
     forwardRef(() => CompanySettingModule),
   ],
   controllers: [CartItemsController],
-  providers: [CartItemsService, ProductService],
-  exports: [CartItemsService, TypeOrmModule],
+  providers: [
+    { provide: CART_STORE, useClass: RedisCartStore },
+    { provide: PRODUCT_GATEWAY, useClass: ProductGatewayAdapter },
+    { provide: SETTINGS_GATEWAY, useClass: SettingsGatewayAdapter },
+    { provide: CART_ITEM_REPOSITORY, useClass: TypeOrmCartItemRepository },
+    GetCartUseCase,
+    GetCartItemsUseCase,
+    AddToCartUseCase,
+    RemoveFromCartUseCase,
+    ClearCartUseCase,
+    PrepaymentUseCase,
+  ],
+  exports: [GetCartItemsUseCase, TypeOrmModule],
 })
 export class CartItemsModule {}
