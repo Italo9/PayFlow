@@ -55,6 +55,9 @@ export class AuthGatewayService {
         );
       }
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       console.error('Erro ao autenticar:', error);
       throw new HttpException(
         'Erro ao autenticar com o Payco',
