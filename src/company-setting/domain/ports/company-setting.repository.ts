@@ -21,4 +21,5 @@ export interface CompanySettingRepository {
   findByCompanyId(companyId: number): Promise<CompanySetting | null>;
   findAll(): Promise<CompanySetting[]>;
   update(id: number, patch: SettingPatch): Promise<CompanySetting | null>;
+  delete(id: number): Promise<void>;
 }

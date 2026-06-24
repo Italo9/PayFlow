@@ -18,5 +18,6 @@ export class RemoveCompanySettingUseCase {
     await this.requester.getByToken(token);
     const exists = await this.companies.exists(companyId);
     if (!exists) throw new CompanyNotFound();
+    await this.settings.delete(existing.id as number);
   }
 }

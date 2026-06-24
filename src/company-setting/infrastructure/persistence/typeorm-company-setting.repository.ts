@@ -55,4 +55,8 @@ export class TypeOrmCompanySettingRepository implements CompanySettingRepository
     }
     return this.findById(id);
   }
+
+  async delete(id: number): Promise<void> {
+    await this.repo.delete(id);
+  }
 }
