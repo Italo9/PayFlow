@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CompanySetting, GatewayConfig } from '../domain/company-setting';
+import { CompanySetting, CompanySettingNotFound, GatewayConfig } from '../domain/company-setting';
 import { COMPANY_SETTING_REPOSITORY, CompanySettingRepository } from '../domain/ports/company-setting.repository';
 import { COMPANY_GATEWAY, CompanyGateway } from '../domain/ports/company-gateway';
 import { REQUESTER_GATEWAY, RequesterGateway } from '../domain/ports/requester-gateway';
@@ -23,7 +23,7 @@ export class UpdateCompanySettingUseCase {
   async execute(id: number, input: UpdateCompanySettingInput, token: string): Promise<CompanySetting | null> {
     await ensureCanManageSettings(this.requester, this.companies, Number(input.companyId), token);
     const existing = await this.settings.findById(id);
-    if (!existing) return null;
+    if (!existing) throw new CompanySettingNotFound();
     return this.settings.update(id, {
       carpayment: input.carpayment,
       limitProductsCheckout: input.limitProductsCheckout,
