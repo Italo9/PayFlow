@@ -16,11 +16,12 @@ export class CreateCartUseCase {
   ) {}
 
   async execute(input: CreateCartInput): Promise<Cart> {
+    const exists = await this.companies.exists(input.companyId);
+    if (!exists) {
+      throw new NotFoundException('Empresa nao encontrada');
+    }
+
     try {
-      const exists = await this.companies.exists(input.companyId);
-      if (!exists) {
-        throw new NotFoundException('Empresa nao encontrada');
-      }
       return await this.carts.create(input.sessionId, input.companyId);
     } catch (error) {
       console.error('Erro ao salvar carrinho:', error);
