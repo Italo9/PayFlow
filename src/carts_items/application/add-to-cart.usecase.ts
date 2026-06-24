@@ -39,7 +39,7 @@ export class AddToCartUseCase {
 
     const carPaymentActive = await this.settings.isCarPaymentActive(companyId);
     if (!carPaymentActive) {
-      return this.prepayment.execute({ sessionId });
+      return this.prepayment.execute({ sessionId, companyId });
     }
 
     const cartPayment = await this.store.getCartPayment(sessionId);
