@@ -35,29 +35,32 @@ export class CreateCheckoutUseCase {
     input: CreateCheckoutInput,
     companyId: number,
   ): Promise<{ qrCodePix: string; pixUrl: string }> {
+    const cart = await this.carts.getBySessionId(input.sessionId);
+    if (!cart) {
+      throw new NotFoundException(`Carrinho com sessionId ${input.sessionId} nao encontrado`);
+    }
+
+    const cartItems = await this.cartItems.getItems(cart.id);
+    if (cartItems.length === 0) {
+      throw new NotFoundException(`Carrinho ${cart.id} nao possui itens`);
+    }
+
+    const items: PixChargeItem[] = await Promise.all(
+      cartItems.map(async (item) => {
+        const product = await this.products.getById(item.productId);
+        if (!product) {
+          throw new NotFoundException(`Produto com ID ${item.productId} nao encontrado`);
+        }
+        return {
+          name: product.name,
+          quantity: String(item.quantity),
+          amount: Number(product.price),
+          code: input.sessionId,
+        };
+      }),
+    );
+
     try {
-      const cart = await this.carts.getBySessionId(input.sessionId);
-      if (!cart) {
-        throw new NotFoundException(`Carrinho com sessionId ${input.sessionId} nao encontrado`);
-      }
-
-      const cartItems = await this.cartItems.getItems(cart.id);
-
-      const items: PixChargeItem[] = await Promise.all(
-        cartItems.map(async (item) => {
-          const product = await this.products.getById(item.productId);
-          if (!product) {
-            throw new NotFoundException(`Produto com ID ${item.productId} nao encontrado`);
-          }
-          return {
-            name: product.name,
-            quantity: String(item.quantity),
-            amount: Number(product.price),
-            code: input.sessionId,
-          };
-        }),
-      );
-
       const charge = await this.pix.createCharge(companyId, {
         items,
         customer: input.customer,
@@ -82,14 +85,10 @@ export class CreateCheckoutUseCase {
 
       return { qrCodePix, pixUrl: charge.pixCode };
     } catch (error) {
-      console.error('Erro no pagamento:', error);
       if (error instanceof HttpException) {
-        const errorResponse = error.getResponse() as { response?: unknown };
-        throw new HttpException(
-          `Erro ao autenticar com o Payco: ${errorResponse['response']}`,
-          error.getStatus(),
-        );
+        throw error;
       }
+      console.error('Erro no pagamento:', error);
       throw new HttpException('Erro no gateway de pagamento.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
